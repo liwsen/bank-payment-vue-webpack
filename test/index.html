@@ -24,7 +24,7 @@
     				<div class="item" v-for="item in mybanklist">
     					<a href="#{{item.code}}">
     						<div class="img">
-    							<img v-bind:src="!!item.code?'../src/images/bank/'+ item.code +'.png':''">
+    							<img v-bind:src="!!item.code?'../src/images/bank/'+ item.code.toString().toUpperCase() +'.png':''">
     						</div>
     						<div class="name">{{item.name}} <span>({{item.lastnum}})</span></div>
     						<div class="quota">可用额度{{item.quota}}元</div>
