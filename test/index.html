@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>网银在线付款</title><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+<link rel="stylesheet" href="../static/bootstrap.min.css" />
+<link rel="stylesheet" href="../static/validform.css" />
+<script type="text/javascript" src="../static/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="../static/Validform_v5.3.2_min.js"></script>
+<script type="text/javascript" src="../static/vue.min.js"></script>
+<!-- <script type="text/javascript" src="../static/vue-resource.min.js"></script> -->
+<script type="text/javascript" src="../dist/payment.build.js"></script>
+</head>
+<body>
+<div id="app_header" class="appHeader"></div>
+<div id="app">
+	<div class="container">
+		<div class="panel panel-default paymentBlock" id="payment_block">
+    		<div class="panel-heading">选择付款方式</div>
+    		<div class="panel-body">
+    			<div class="hasBankList">
+    				<div class="item" v-for="item in mybanklist">
+    					<a href="#{{item.code}}">
+    						<div class="img">
+    							<img v-bind:src="!!item.code?'../src/images/bank/'+ item.code +'.png':''">
+    						</div>
+    						<div class="name">{{item.name}} <span>({{item.lastnum}})</span></div>
+    						<div class="quota">可用额度{{item.quota}}元</div>
+    					</a>
+    				</div>
+    			</div>
+    			<div class="addNew" v-show="!paymentblockshow" v-on:click="paymentblockshow = !paymentblockshow">+ 添加新银行卡付款</div>
+    		</div>
+    	</div>
+		<div class="panel panel-default paymentBlock" id="payment_block" v-show="paymentblockshow">
+    		<div class="panel-heading">添加银行卡付款</div>
+    		<div class="panel-body">
+        		<form name="payment" action="s.php" method="post" id="payment">
+        			<div class="form-group">
+        				<div class="col-xs-8 col-xs-offset-4">
+	    					<input type="radio" name="card_type_label" id="card_type_c" value="c" v-bind:checked="cardtype==='c'?'checked':''" v-on:click="checkedCardType($event)">
+	    					<label for="card_type_c">信用卡</label> &nbsp; 
+	    					<input type="radio" name="card_type_label" id="card_type_d" value="d" v-bind:checked="cardtype==='d'?'checked':''" v-on:click="checkedCardType($event)">
+	    					<label for="card_type_d">借记卡</label>
+	    					<input type="hidden" name="card_type" :value="cardtype">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+        				<label for="card_bank_name" class="col-xs-4 text-right">银行编码：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_bank_name" id="card_bank_name" placeholder="请选择银行" readonly="readonly" :value="cardbankname" v-on:click="getAllBankList" datatype="*" nullmsg="请选择银行编码">
+	        				<input type="hidden" name="card_bank" id="card_bank" :value="cardbank">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+        				<label for="card_no" class="col-xs-4 text-right">卡号：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_no" id="card_no" placeholder="请输入卡号" datatype="/^(\d{16}|\d{19})$/" nullmsg="银行卡号不能为空！" errormsg="银行卡号不正确！">
+        				</div>
+        			</div>
+        			<div class="form-group row" v-if="cardtype==='c'">
+        				<label for="card_exp" class="col-xs-4 text-right">信用卡有效期：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="date" class="form-control" name="card_exp" id="card_exp" placeholder="请输入有效期" datatype="/^\d{4}-\d{2}-\d{2}$/" nullmsg="信用卡有效期不能为空！" errormsg="信用卡有效期不正确！">
+        				</div>
+        			</div>
+        			<div class="form-group row" v-if="cardtype==='c'">
+        				<label for="card_cvv2" class="col-xs-4 text-right">信用卡校验码：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_cvv2" id="card_cvv2" placeholder="请输入校验码" datatype="n" nullmsg="信用卡校验码不能为空！" errormsg="信用卡校验码不正确！">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+        				<label for="card_name" class="col-xs-4 text-right">持卡人姓名：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_name" id="card_name" placeholder="请输入持卡人姓名" datatype="s2-10" nullmsg="持卡人姓名不能为空！" errormsg="持卡人姓名不正确！">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+        				<label for="card_idno" class="col-xs-4 text-right">持卡人证件号码：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_idno" id="card_idno" placeholder="请输入持卡人证件号码" datatype="/^[1-9]\d{5}[1-9]\d{3}((0\d)|(1[0-2]))(([0|1|2]\d)|3[0-1])\d{3}([0-9]|X)$/" nullmsg="持卡人证件号码不能为空！" errormsg="持卡人证件号码不正确！">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+        				<label for="card_phone" class="col-xs-4 text-right">持卡人电话号码：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_phone" id="card_phone" placeholder="请输入持卡人电话号码" datatype="/^((\d{11})|^((\d{7,8})|(\d{4}|\d{3})-(\d{7,8})|(\d{4}|\d{3})-(\d{7,8})-(\d{4}|\d{3}|\d{2}|\d{1})|(\d{7,8})-(\d{4}|\d{3}|\d{2}|\d{1}))$)$/" nullmsg="持卡人电话号码不能为空！" errormsg="持卡人电话号码不正确！">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+        				<label for="card_phone" class="col-xs-4 text-right">验证码：<span class="text-danger">*</span></label>
+        				<div class="col-xs-8">
+	        				<input type="text" class="form-control" name="card_phone" id="card_phone" placeholder="请输入验证码" datatype="*" nullmsg="验证码不能为空！">
+        				</div>
+        			</div>
+        			<div class="form-group row">
+						<!-- 持卡人证件类型： -->
+                        <input type="hidden" name="card_idtype" value="I"/>
+						<!-- 交易类型： -->
+                        <input type="hidden" name="trade_type" value="S"/>
+						<!-- 交易ID： -->
+                        <input type="hidden" name="trade_id" value="12345670123"/>
+						<!-- 金额： -->
+                        <input type="hidden" name="trade_amount" value="1"/>
+						<!-- 货币类型： -->
+                        <input type="hidden" name="trade_currency" value="CNY"/>
+						<!-- 日期： -->
+                        <input type="hidden" name="trade_date" value="20140402"/>
+						<!-- 时间： -->
+                        <input type="hidden" name="trade_time" value="183000"/>
+						<!-- 通知地址： -->
+ 						<input type="hidden" name="trade_notice" value=""/>
+						<!-- 备注： -->
+                        <input type="hidden" name="trade_note" value="我要消费"/>
+        				<div class="col-xs-12">
+	        				<button class="btn btn-primary btn-lg btn-block" type="submit">支付</button>
+        				</div>
+        			</div>
+    			</form>
+    		</div>
+    	</div>
+	</div>
+	<transition name="fade">
+		<div class="bankBox" id="bank_box" v-show="showbankbox" v-on:click="showbankbox = !showbankbox">
+			<div class="content" v-on:click.stop>
+				<div class="bankHead">所有银行列表<span class="pull-right" v-on:click="showbankbox = !showbankbox">X</span></div>
+				<div class="list">
+					<template v-for="item in allbanklist">
+						<div class="item active" v-if="item.code === cardbank" v-on:click="checkedCardBank(item, $event)">{{item.name}}</div>
+						<div class="item" v-else v-on:click="checkedCardBank(item, $event)">{{item.name}}</div>
+					</template>
+				</div>
+			</div>
+		</div>
+	</transition>
+</div>
+<div id="app_footer" class="appFooter">网银在线版权所有</div>
+</body>
+</html>
